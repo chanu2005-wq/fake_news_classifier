@@ -2,70 +2,65 @@ import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import joblib
 
-# Check the current working directory
+# Check current working directory
 print("Current Working Directory:", os.getcwd())
 
-# Define the file paths for the fake and real news CSV files
+# Define file paths
 fake_file_path = "data/Fake.csv"
 real_file_path = "data/True.csv"
 
-# Check if both files exist before trying to read them
+# Check if files exist
 if os.path.exists(fake_file_path) and os.path.exists(real_file_path):
-    # Read both CSV files into DataFrames
+    # Load datasets
     fake_df = pd.read_csv(fake_file_path)
     real_df = pd.read_csv(real_file_path)
 
-    # Add a column to each DataFrame indicating the label (Fake/Real)
-    fake_df['label'] = 0  # 0 for fake news
-    real_df['label'] = 1  # 1 for real news
+    # Assign labels
+    fake_df['label'] = 0  # Fake
+    real_df['label'] = 1  # Real
 
-    # Concatenate the two DataFrames
-    df = pd.concat([fake_df, real_df], ignore_index=True)
+    # Combine and shuffle
+    df = pd.concat([fake_df, real_df], ignore_index=True).sample(frac=1, random_state=42)
 
-    # Split data into features (X) and labels (y)
-    X = df['text']  # Assuming the text column is named 'text'
+    # Features and labels
+    X = df['text']
     y = df['label']
 
-    # Split the data into training and test sets
+    # Train-test split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Convert text data into numerical features using TF-IDF Vectorizer
-    vectorizer = TfidfVectorizer(stop_words='english')
+    # TF-IDF vectorization
+    vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7)
     X_train_tfidf = vectorizer.fit_transform(X_train)
     X_test_tfidf = vectorizer.transform(X_test)
 
-    # Train the model (Logistic Regression)
-    model = LogisticRegression()
+    # Train model
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
     model.fit(X_train_tfidf, y_train)
 
-    # Example: Train the model
-    vectorizer = TfidfVectorizer(stop_words="english")
-    X_train_tfidf = vectorizer.fit_transform(X_train)  # X_train is your text data
-    model = RandomForestClassifier()
-    model.fit(X_train_tfidf, y_train)  # y_train is the target labels
-
-    # Predict on the test set
+    # Evaluate
     y_pred = model.predict(X_test_tfidf)
-
-    # Evaluate the model's performance
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"Accuracy: {accuracy * 100:.2f}%")
+    print(f"Model Accuracy: {accuracy * 100:.2f}%")
 
-    # Save the model and vectorizer
-    joblib.dump(model, 'model/model_joblib.pkl')
-    joblib.dump(vectorizer, 'model/vectorizer.pkl')
+    # Create model directory if not exists
+    os.makedirs('model', exist_ok=True)
 
-    # Save the trained model and vectorizer for future use
-    joblib.dump(model, 'fake_news_model.pkl')
-    joblib.dump(vectorizer, 'tfidf_vectorizer.pkl')
+    # Save model and vectorizer
+    joblib.dump(model, 'model/fake_news_model.pkl')
+    joblib.dump(vectorizer, 'model/tfidf_vectorizer.pkl')
+
+    print("Model and vectorizer saved successfully!")
+
 else:
-    print("Error: One or both of the files were not found. Please check the file paths and try again.")
-    import joblib
+    print("❌ Error: One or both dataset files not found. Check paths: 'data/Fake.csv', 'data/True.csv'")
+
+    
+
 
 
 
